@@ -1,0 +1,43 @@
+version: "3"
+services:
+  nginx:
+    container_name: "${COMPOSE_PROJECT_NAME}-nginx"
+    build:
+      context: .
+      dockerfile: docker/Nginx.Dockerfile
+    ports:
+    - "80:80"
+    volumes:
+      - ./docker/logs/nginx-access.log:/var/log/nginx/access.log
+      - ./docker/logs/nginx-error.log:/var/log/nginx/error.log
+      - ./public/laravel:/var/www
+    depends_on:
+      - php-fpm
+
+  php-fpm:
+    container_name: "${COMPOSE_PROJECT_NAME}-php-fpm"
+    build:
+      context: .
+      dockerfile: docker/Phpfpm.Dockerfile
+    environment:
+      PHP_IDE_CONFIG: "serverName=${COMPOSE_SERVER_NAME}"
+#    ports:
+#      - "9001:9001"
+    volumes:
+      - ./public/laravel:/var/www
+      - ./docker/config/xdebug.ini:/usr/local/etc/php/conf.d/xdebug.ini
+    depends_on:
+      - mysql
+
+  mysql:
+    container_name: "${COMPOSE_PROJECT_NAME}-mysql"
+    image: mysql:5.7
+    volumes:
+      - ./docker/database:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=secret
+      - MYSQL_DATABASE=${COMPOSE_SERVER_NAME}
+      - MYSQL_USER=user
+      - MYSQL_PASSWORD=secret
+    ports:
+      - "3306:3306"
